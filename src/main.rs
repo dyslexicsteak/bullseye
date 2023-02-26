@@ -50,7 +50,6 @@ fn main() -> io::Result<()> {
                 .arg("-q")
                 .spawn()?
                 .wait()?;
-            dbg!(path);
         }
     }
 
