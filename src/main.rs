@@ -6,10 +6,12 @@ use std::{
     process::Command,
 };
 
-use cli::Cli;
+use cli::{Cli, Output};
 
 use clap::Parser;
 use duration_str::parse;
+use rayon::iter::ParallelBridge;
+use rayon::prelude::*;
 
 fn main() -> io::Result<()> {
     let args = Cli::parse();
@@ -17,6 +19,8 @@ fn main() -> io::Result<()> {
     let duration = args.duration.unwrap_or("1w".into());
 
     let duration = parse(&duration).unwrap();
+    let verbose = matches!(args.output, Some(Output::Verbose));
+    let dry_run = args.dry_run;
 
     let path = args.directory.canonicalize()?;
 
@@ -26,21 +30,32 @@ fn main() -> io::Result<()> {
 
     let dir = read_dir(path)?;
 
-    for entry in dir {
-        let entry = entry?;
+    for entry in dir.into_iter().par_bridge().into_par_iter() {
+        let entry = entry.unwrap();
         let mut path = entry.path();
 
-        let metadata = metadata(&path)?;
+        let metadata = metadata(&path).unwrap();
         let last_modified = metadata
-            .modified()?
+            .modified()
+            .unwrap()
             .elapsed()
             .expect("Failed to get elapsed time.");
 
-        if !(last_modified >= duration) {
-            continue;
-        }
+        if last_modified >= duration {
+            path.push("Cargo.toml");
 
-        path.push("Cargo.toml");
+            if path.exists() {
+                if !dry_run {
+                    Command::new("cargo")
+                        .arg("clean")
+                        .arg("--manifest-path")
+                        .arg(&path)
+                        .arg("-q")
+                        .spawn()
+                        .unwrap()
+                        .wait()
+                        .unwrap();
+                }
 
         if path.exists() {
             Command::new("cargo")
@@ -50,6 +65,10 @@ fn main() -> io::Result<()> {
                 .arg("-q")
                 .spawn()?
                 .wait()?;
+                if verbose {
+                    println!("Project at {path:#?} cleaned.");
+                }
+            }
         }
     }
 
