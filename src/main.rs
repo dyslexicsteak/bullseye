@@ -30,14 +30,14 @@ fn main() -> io::Result<()> {
 
     let dir = read_dir(path)?;
 
-    for entry in dir.into_iter().par_bridge().into_par_iter() {
+    dir.into_iter().par_bridge().for_each(|entry| {
         let entry = entry.unwrap();
         let mut path = entry.path();
 
         let metadata = metadata(&path).unwrap();
         let last_modified = metadata
             .modified()
-            .unwrap()
+            .expect("Unable to get last modified time.")
             .elapsed()
             .expect("Failed to get elapsed time.");
 
@@ -57,20 +57,12 @@ fn main() -> io::Result<()> {
                         .unwrap();
                 }
 
-        if path.exists() {
-            Command::new("cargo")
-                .arg("clean")
-                .arg("--manifest-path")
-                .arg(&path)
-                .arg("-q")
-                .spawn()?
-                .wait()?;
                 if verbose {
                     println!("Project at {path:#?} cleaned.");
                 }
             }
         }
-    }
+    });
 
     Ok(())
 }
