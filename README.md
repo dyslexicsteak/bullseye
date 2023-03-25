@@ -2,9 +2,11 @@
 A tool to clean up your target directories as they usually take up a significant amount of disk space.
 
 ## Usage
-This tool only takes 2 arguments:
+This tool takes 2 arguments:
   - Directory: The directory whose children are going to be cleaned.
   - (Optional) Duration: The minimum time since the last modifcation to the directory for it to be considered dormant. This defaults to 1 week.
+  - (Optional) Output: Whether the output is quiet or verbose, can either be quiet or verbose.
+  - (Optional) Dry Run: Whether any cleaning should actually take place or not, defaults to false.
 
 ## Duration Format
 The duration format is that of the `duration-str` crate.
