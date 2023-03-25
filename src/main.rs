@@ -31,10 +31,10 @@ fn main() -> io::Result<()> {
     let dir = read_dir(path)?;
 
     dir.into_iter().par_bridge().for_each(|entry| {
-        let entry = entry.unwrap();
+        let entry = entry.expect("Failed to get directory entry.");
         let mut path = entry.path();
 
-        let metadata = metadata(&path).unwrap();
+        let metadata = metadata(&path).expect("Failed to get folder metadata.");
         let last_modified = metadata
             .modified()
             .expect("Unable to get last modified time.")
@@ -52,9 +52,9 @@ fn main() -> io::Result<()> {
                         .arg(&path)
                         .arg("-q")
                         .spawn()
-                        .unwrap()
+                        .expect("Failed to spawn task.")
                         .wait()
-                        .unwrap();
+                        .expect("cargo clean task failed.");
                 }
 
                 if verbose {
